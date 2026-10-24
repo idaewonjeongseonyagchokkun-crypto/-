@@ -25,11 +25,11 @@ npm run build
 ```bash
 VITE_TARGET=artifact npm run build && node scripts/bundle-artifact.mjs dist/hankki-preview.html
 ```
-외부 DB 조회·다운로드가 막힌 환경용으로 바코드 검색을 숨기고, 처음 열면 예시 기록을 채웁니다.
+외부 DB 조회·다운로드가 막힌 환경용으로 바코드 검색을 숨기고, 처음 열면 예시 기록을 채웁니다. 사진 분석은 API 키 없이 보는 사람의 Claude 계정으로 실행됩니다(게시 시 `capabilities: {sample: {images: true}}`).
 
 ## GitHub Pages (서버 없는 무료 배포)
 
-저장소 **Settings → Pages → Source를 'GitHub Actions'** 로 한 번만 바꾸면, 이후 main에 올릴 때마다 https://idaewonjeongseonyagchokkun-crypto.github.io/-/ 로 자동 배포됩니다. AI 사진 분석은 예시값으로 동작합니다.
+main에 올릴 때마다 Actions가 빌드해 `gh-pages` 브랜치로 올리고, https://idaewonjeongseonyagchokkun-crypto.github.io/-/ 가 자동 갱신됩니다. 서버가 없어 AI 사진 분석은 예시값으로 동작합니다.
 
 ## 배포 (Vercel 권장 — AI 분석 포함)
 

@@ -1,5 +1,27 @@
 import type { FoodItem, ScannedProduct } from './types';
 import { detectAdditives } from './nutrition';
+import { IS_PREVIEW } from './target';
+import { LABEL_PROMPT, MEAL_PROMPT } from './prompts';
+
+/** claude.ai 미리보기 페이지가 제공하는 'Claude에게 묻기' 기능 (API 키 불필요, 보는 사람의 Claude 계정 사용) */
+type SampleFn = { json: (input: string, opts: { images: Blob[]; modelTier?: string; cache?: boolean }) => Promise<unknown> };
+declare global { interface Window { claude?: { use: (name: string) => Promise<unknown> } } }
+
+function dataUrlToBlob(dataUrl: string) {
+  const [head, b64] = dataUrl.split(',');
+  const type = /data:([^;]+)/.exec(head)?.[1] ?? 'image/jpeg';
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new Blob([bytes], { type });
+}
+
+async function askClaudeInPreview(mode: 'meal' | 'label', image: string, hint?: string) {
+  const sample = (await window.claude?.use('sample')) as SampleFn | null | undefined;
+  if (!sample) throw new Error('sample unavailable');
+  const prompt = mode === 'meal' ? MEAL_PROMPT + (hint ? `\n사용자 메모: ${hint}` : '') : LABEL_PROMPT;
+  return sample.json(prompt, { images: [dataUrlToBlob(image)], cache: false }) as Promise<any>;
+}
 
 /** 사진을 긴 변 1024px JPEG로 줄여 업로드 시간을 짧게 만듭니다. */
 export async function resizeImage(file: File, max = 1024, quality = 0.82): Promise<string> {
@@ -13,6 +35,7 @@ export async function resizeImage(file: File, max = 1024, quality = 0.82): Promi
 }
 
 async function postAnalyze(mode: 'meal' | 'label', image: string, hint?: string) {
+  if (IS_PREVIEW) return askClaudeInPreview(mode, image, hint);
   const res = await fetch(`${import.meta.env.BASE_URL}api/analyze`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -30,8 +53,8 @@ export interface MealAnalysis {
 export async function analyzeMeal(image: string, hint?: string): Promise<MealAnalysis> {
   try {
     const data = await postAnalyze('meal', image, hint);
-    if (Array.isArray(data.items) && data.items.length) return { items: data.items.map(cleanItem), source: 'ai' };
-    throw new Error('empty');
+    if (Array.isArray(data?.items)) return { items: data.items.map(cleanItem), source: 'ai' };
+    throw new Error('no items');
   } catch {
     // AI 서버가 연결되지 않은 미리보기 환경: 화면 흐름을 확인할 수 있도록 예시 추정값을 보여줍니다.
     await new Promise((r) => setTimeout(r, 900));

@@ -4,6 +4,7 @@ import { actions } from '../lib/store';
 import { fmt, sumItems } from '../lib/nutrition';
 import type { FoodItem, MealSlot } from '../lib/types';
 import { Icon } from '../ui';
+import { IS_PREVIEW } from '../lib/target';
 
 const SLOTS: MealSlot[] = ['아침', '점심', '저녁', '간식'];
 const SCALES = [0.5, 0.75, 1, 1.5, 2];
@@ -102,7 +103,7 @@ export function Capture({ onClose, onSaved }: { onClose: () => void; onSaved: (m
 
         {items && total && (
           <>
-            {source === 'demo' && <div className="notice">AI 분석이 아직 연결되지 않아 예시 값을 보여 드립니다. 서버에 API 키를 넣으면 실제 사진을 분석합니다.</div>}
+            {source === 'demo' && <div className="notice">{IS_PREVIEW ? 'Claude 사진 분석을 쓸 수 없어 예시 값을 보여 드립니다. 분석 허용 창이 뜨면 허용을 눌러 주세요.' : 'AI 분석이 아직 연결되지 않아 예시 값을 보여 드립니다. 서버에 API 키를 넣으면 실제 사진을 분석합니다.'}</div>}
             {items.length === 0 ? (
               <div className="notice bad">음식을 찾지 못했습니다. 접시가 다 보이게 다시 찍어 보세요.</div>
             ) : (
