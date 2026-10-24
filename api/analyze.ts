@@ -4,7 +4,7 @@
  * API 키는 서버에만 있고 브라우저로 내려가지 않습니다.
  */
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { LABEL_PROMPT, MEAL_PROMPT } from '../src/lib/prompts';
+import { LABEL_PROMPT, MEAL_PROMPT } from '../src/lib/prompts.js';
 
 type Req = IncomingMessage & { body?: unknown };
 type Res = ServerResponse;
