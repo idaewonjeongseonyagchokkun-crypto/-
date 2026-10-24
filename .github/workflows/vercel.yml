@@ -1,0 +1,55 @@
+# main에 푸시할 때마다 Vercel(AI 사진 분석 서버 포함)로 자동 배포합니다.
+# 저장소 Secrets에 VERCEL_TOKEN이 있을 때만 실행되고, 없으면 조용히 건너뜁니다.
+#   VERCEL_TOKEN       https://vercel.com/account/tokens 에서 만든 토큰
+#   ANTHROPIC_API_KEY  https://console.anthropic.com/settings/keys 에서 만든 키 (사진 분석용)
+# 배포 주소: https://hankki-scan.vercel.app (이름이 이미 쓰였으면 Vercel이 정한 주소가 실행 기록에 표시됩니다)
+name: Deploy to Vercel
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vercel
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_SCOPE: idaewonjeongseonyagchokkun-2017
+    steps:
+      - name: Skip when Vercel is not set up
+        if: env.VERCEL_TOKEN == ''
+        run: echo "::notice::VERCEL_TOKEN 시크릿이 없어 Vercel 배포를 건너뜁니다."
+      - if: env.VERCEL_TOKEN != ''
+        uses: actions/checkout@v4
+      - if: env.VERCEL_TOKEN != ''
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Link project
+        if: env.VERCEL_TOKEN != ''
+        run: npx --yes vercel@latest link --yes --project hankki-scan --scope "$VERCEL_SCOPE" --token "$VERCEL_TOKEN"
+      - name: Set AI key on the project
+        if: env.VERCEL_TOKEN != ''
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -n "$ANTHROPIC_API_KEY" ]; then
+            npx --yes vercel@latest env rm ANTHROPIC_API_KEY production --yes --scope "$VERCEL_SCOPE" --token "$VERCEL_TOKEN" >/dev/null 2>&1 || true
+            printf '%s' "$ANTHROPIC_API_KEY" | npx --yes vercel@latest env add ANTHROPIC_API_KEY production --scope "$VERCEL_SCOPE" --token "$VERCEL_TOKEN"
+          else
+            echo "::warning::ANTHROPIC_API_KEY 시크릿이 없어 사진 분석은 예시값으로 동작합니다."
+          fi
+      - name: Deploy
+        if: env.VERCEL_TOKEN != ''
+        run: |
+          url=$(npx --yes vercel@latest deploy --prod --yes --scope "$VERCEL_SCOPE" --token "$VERCEL_TOKEN")
+          echo "배포 주소: $url"
+          echo "### Vercel 배포 완료: $url" >> "$GITHUB_STEP_SUMMARY"
