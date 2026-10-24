@@ -12,6 +12,18 @@
 
 신제품 개발 데이터: 사용자가 설정에서 **익명 트렌드 공유**를 켜면 음식 이름·추정 영양값·식사 시각(시 단위)·스캔 제품명과 점수만 `/api/events`로 보내고, `INSIGHTS_WEBHOOK_URL`(예: 구글 시트 Apps Script)에 쌓입니다. 사진·이름·위치는 보내지 않습니다. 기본값은 꺼짐입니다.
 
+## 대표님이 해 주실 일 (보안 규칙상 대신할 수 없는 것만)
+
+| 할 일 | 바로가기 | 하고 나면 |
+|---|---|---|
+| ① Anthropic API 키 만들기 | [콘솔 키 페이지](https://console.anthropic.com/settings/keys) | 키를 복사해 둡니다 (Claude에게 보내지 마세요) |
+| ② Vercel에 저장소 연결 | [Vercel 가져오기](https://vercel.com/new/import?s=https://github.com/idaewonjeongseonyagchokkun-crypto/-) | Environment Variables에 `ANTHROPIC_API_KEY` = ①의 키 → Deploy |
+| ③ 미리보기 페이지 공유 (선택) | [한끼스캔 미리보기](https://claude.ai/artifact/8cuUXGLTcSkdPT5kMZfQBV) | 페이지의 공유 메뉴에서 공유 켜기 |
+| ④ 국내 바코드 DB 키 신청 (선택) | [식품안전나라 Open API](https://www.foodsafetykorea.go.kr/api/main.do) | 발급된 인증키 이름만 알려 주시면 연결 코드를 작성합니다 |
+| ⑤ 원산지 확인 | [스마트스토어](https://smartstore.naver.com/doll3269) | 고추부각·산더덕즙 표시사항의 원산지를 알려 주세요 |
+
+②를 마치면 Vercel 주소에서 누구나 실제 AI 사진 분석을 쓸 수 있습니다. 이후 배포는 main에 올릴 때마다 자동입니다.
+
 ## 실행
 
 ```bash
@@ -33,7 +45,7 @@ main에 올릴 때마다 Actions가 빌드해 `gh-pages` 브랜치로 올리고,
 
 ## 배포 (Vercel 권장 — AI 분석 포함)
 
-1. vercel.com에서 이 GitHub 저장소를 Import
+1. [Vercel 가져오기](https://vercel.com/new/import?s=https://github.com/idaewonjeongseonyagchokkun-crypto/-)로 이 저장소를 Import
 2. 환경변수 설정
    - `ANTHROPIC_API_KEY` — 사진 분석용 (필수)
    - `CLAUDE_MODEL` — 선택, 기본 `claude-haiku-5-5`
