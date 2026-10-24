@@ -13,7 +13,7 @@ export async function resizeImage(file: File, max = 1024, quality = 0.82): Promi
 }
 
 async function postAnalyze(mode: 'meal' | 'label', image: string, hint?: string) {
-  const res = await fetch('/api/analyze', {
+  const res = await fetch(`${import.meta.env.BASE_URL}api/analyze`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ mode, image, hint }),
@@ -137,7 +137,7 @@ export async function lookupBarcode(code: string): Promise<ProductDraft | null> 
 
 /** 사용자가 동의한 경우에만 익명 트렌드(사진·개인정보 제외)를 보냅니다. */
 export function shareTrend(anonId: string, event: Record<string, string | number | boolean>) {
-  fetch('/api/events', {
+  fetch(`${import.meta.env.BASE_URL}api/events`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ anonId, ...event, at: new Date().toISOString().slice(0, 13) }),

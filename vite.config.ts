@@ -21,6 +21,8 @@ function localApi(): Plugin {
 }
 
 export default defineConfig({
+  // GitHub Pages는 /-/ 하위 경로, Vercel은 / 루트에서 서비스합니다.
+  base: process.env.BASE_PATH || '/',
   plugins: [react(), localApi()],
   server: { host: true },
 });

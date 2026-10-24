@@ -10,9 +10,11 @@ import { Icon, useToast } from './ui';
 type Tab = 'today' | 'scan' | 'rhythm' | 'jeongseon';
 
 function initial(): { tab: Tab; focus?: string } {
-  const m = location.pathname.match(/^\/p\/([a-z0-9-]+)/);
+  const base = import.meta.env.BASE_URL;
+  const path = '/' + (location.pathname.startsWith(base) ? location.pathname.slice(base.length) : location.pathname.replace(/^\//, ''));
+  const m = path.match(/^\/p\/([a-z0-9-]+)/);
   if (m) return { tab: 'jeongseon', focus: m[1] };
-  if (location.pathname.startsWith('/scan')) return { tab: 'scan' };
+  if (path.startsWith('/scan')) return { tab: 'scan' };
   return { tab: 'today' };
 }
 
