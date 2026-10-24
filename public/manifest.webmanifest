@@ -1,0 +1,11 @@
+{
+  "name": "한끼스캔",
+  "short_name": "한끼스캔",
+  "description": "사진 한 장 식사 기록 · 제품 성분 스캔 · 나의 생활 리듬",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ECEFE8",
+  "theme_color": "#4F6B34",
+  "lang": "ko",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

@@ -1,0 +1,25 @@
+{
+  "name": "hankki-scan",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "한끼스캔 — 아리랑식품영농조합법인의 식사 사진 기록·제품 성분 스캔·생활 리듬 앱",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11"
+  }
+}
