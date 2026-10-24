@@ -22,7 +22,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      VERCEL_SCOPE: idaewonjeongseonyagchokkun-2017
     steps:
       - name: Skip when Vercel is not set up
         if: env.VERCEL_TOKEN == ''
@@ -35,21 +34,21 @@ jobs:
           node-version: 22
       - name: Link project
         if: env.VERCEL_TOKEN != ''
-        run: npx --yes vercel@latest link --yes --project hankki-scan --scope "$VERCEL_SCOPE" --token "$VERCEL_TOKEN"
+        run: npx --yes vercel@latest link --yes --project hankki-scan --token "$VERCEL_TOKEN"
       - name: Set AI key on the project
         if: env.VERCEL_TOKEN != ''
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           if [ -n "$ANTHROPIC_API_KEY" ]; then
-            npx --yes vercel@latest env rm ANTHROPIC_API_KEY production --yes --scope "$VERCEL_SCOPE" --token "$VERCEL_TOKEN" >/dev/null 2>&1 || true
-            printf '%s' "$ANTHROPIC_API_KEY" | npx --yes vercel@latest env add ANTHROPIC_API_KEY production --scope "$VERCEL_SCOPE" --token "$VERCEL_TOKEN"
+            npx --yes vercel@latest env rm ANTHROPIC_API_KEY production --yes --token "$VERCEL_TOKEN" >/dev/null 2>&1 || true
+            printf '%s' "$ANTHROPIC_API_KEY" | npx --yes vercel@latest env add ANTHROPIC_API_KEY production --token "$VERCEL_TOKEN"
           else
             echo "::warning::ANTHROPIC_API_KEY 시크릿이 없어 사진 분석은 예시값으로 동작합니다."
           fi
       - name: Deploy
         if: env.VERCEL_TOKEN != ''
         run: |
-          url=$(npx --yes vercel@latest deploy --prod --yes --scope "$VERCEL_SCOPE" --token "$VERCEL_TOKEN")
+          url=$(npx --yes vercel@latest deploy --prod --yes --token "$VERCEL_TOKEN")
           echo "배포 주소: $url"
           echo "### Vercel 배포 완료: $url" >> "$GITHUB_STEP_SUMMARY"
