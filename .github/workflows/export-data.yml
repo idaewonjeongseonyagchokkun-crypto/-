@@ -1,0 +1,41 @@
+# 신제품 데이터 내보내기: 비공개 저장소에 쌓인 익명 기록을 CSV로 묶어 실행 결과(Artifacts)에 올립니다.
+# 매주 월요일 오전 8시(한국 시각) 자동 실행, Actions 탭에서 수동 실행도 가능합니다.
+name: Export product data
+
+on:
+  schedule:
+    - cron: '0 23 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: Get store access
+        run: |
+          t=$(printf '%s' "$VERCEL_TOKEN" | tr -d '[:space:]')
+          echo "::add-mask::$t"
+          npx --yes vercel@latest link --yes --project hankki-scan --token "$t" >/dev/null
+          npx --yes vercel@latest env pull .env.export --environment production --yes --token "$t" >/dev/null
+          for k in BLOB_READ_WRITE_TOKEN BLOB_STORE_ID VERCEL_OIDC_TOKEN; do
+            v=$(grep -E "^$k=" .env.export | head -1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//')
+            if [ -n "$v" ]; then echo "::add-mask::$v"; echo "$k=$v" >> "$GITHUB_ENV"; echo "$k: 있음"; else echo "$k: 없음"; fi
+          done
+          rm -f .env.export
+      - name: Build CSV
+        run: node scripts/export-events.mjs hankki-events.csv
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hankki-events
+          path: hankki-events.csv
+          retention-days: 30

@@ -12,5 +12,6 @@ export default function handler(_req: IncomingMessage, res: ServerResponse) {
     aiConfigured: Boolean(process.env.ANTHROPIC_API_KEY),
     model: process.env.CLAUDE_MODEL || 'claude-haiku-5-5',
     insightsWebhook: Boolean(process.env.INSIGHTS_WEBHOOK_URL),
+    dataStore: Boolean(process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID),
   }));
 }

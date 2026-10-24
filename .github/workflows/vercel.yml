@@ -79,6 +79,16 @@ jobs:
             "") echo "::notice::INSIGHTS_WEBHOOK_URL 시크릿이 없어 데이터 시트 연결을 건너뜁니다.";;
             *) echo "::warning::INSIGHTS_WEBHOOK_URL 값이 https://script.google.com/ 으로 시작하지 않습니다. Apps Script 웹 앱 URL 전체를 넣어 주세요.";;
           esac
+      - name: Connect private data store (once)
+        if: env.VERCEL_TOKEN != ''
+        run: |
+          if npx --yes vercel@latest env ls production --token "$VERCEL_TOKEN" 2>/dev/null | grep -qE 'BLOB_READ_WRITE_TOKEN|BLOB_STORE_ID'; then
+            echo "데이터 저장소: 이미 연결됨"
+          else
+            npx --yes vercel@latest blob create-store hankki-data --access private --region icn1 -e production --yes --token "$VERCEL_TOKEN" \
+              && echo "데이터 저장소: 새로 만들어 연결함" \
+              || echo "::warning::데이터 저장소를 만들지 못했습니다. 기록은 서버 로그에만 남습니다."
+          fi
       - name: Deploy
         if: env.VERCEL_TOKEN != ''
         run: |
