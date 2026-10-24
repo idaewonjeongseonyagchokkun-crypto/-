@@ -25,7 +25,7 @@ do {
     const got = await get(b.pathname, { access: 'private' });
     if (!got) continue;
     const text = await new Response(got.stream).text();
-    try { rows.push(label(JSON.parse(text))); } catch { /* 깨진 기록은 건너뜀 */ }
+    try { const r = JSON.parse(text); if (!String(r.anonId || '').startsWith('test-')) rows.push(label(r)); } catch { /* 깨진 기록은 건너뜀 */ }
   }
   cursor = page.hasMore ? page.cursor : undefined;
 } while (cursor);
