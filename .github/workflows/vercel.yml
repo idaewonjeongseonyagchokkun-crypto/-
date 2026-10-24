@@ -65,6 +65,20 @@ jobs:
           else
             echo "::warning::ANTHROPIC_API_KEY 시크릿이 없어 사진 분석은 예시값으로 동작합니다."
           fi
+      - name: Set data sheet address on the project
+        if: env.VERCEL_TOKEN != ''
+        env:
+          INSIGHTS_WEBHOOK_URL: ${{ secrets.INSIGHTS_WEBHOOK_URL }}
+        run: |
+          w=$(printf '%s' "$INSIGHTS_WEBHOOK_URL" | tr -d '[:space:]')
+          case "$w" in
+            https://script.google.com/*)
+              npx --yes vercel@latest env rm INSIGHTS_WEBHOOK_URL production --yes --token "$VERCEL_TOKEN" >/dev/null 2>&1 || true
+              printf '%s' "$w" | npx --yes vercel@latest env add INSIGHTS_WEBHOOK_URL production --token "$VERCEL_TOKEN"
+              echo "INSIGHTS_WEBHOOK_URL: 형식 정상";;
+            "") echo "::notice::INSIGHTS_WEBHOOK_URL 시크릿이 없어 데이터 시트 연결을 건너뜁니다.";;
+            *) echo "::warning::INSIGHTS_WEBHOOK_URL 값이 https://script.google.com/ 으로 시작하지 않습니다. Apps Script 웹 앱 URL 전체를 넣어 주세요.";;
+          esac
       - name: Deploy
         if: env.VERCEL_TOKEN != ''
         run: |
