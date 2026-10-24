@@ -1,5 +1,7 @@
 # 한끼스캔
 
+**대표 주소: https://hankki-scan.vercel.app** (AI 사진 분석 포함) · 예비 주소: https://idaewonjeongseonyagchokkun-crypto.github.io/-/
+
 아리랑식품영농조합법인이 만든 모바일 웹앱(PWA)입니다. 세 앱의 성공 구조를 한 화면 흐름으로 묶었습니다.
 
 | 벤치마크 | 배운 점 | 한끼스캔에서 |
@@ -17,12 +19,12 @@
 | 할 일 | 바로가기 | 하고 나면 |
 |---|---|---|
 | ① Anthropic API 키 만들기 | [콘솔 키 페이지](https://console.anthropic.com/settings/keys) | 키를 복사해 둡니다 (Claude에게 보내지 마세요) |
-| ② GitHub에 비밀값 2개 넣기 | [VERCEL_TOKEN 만들기](https://vercel.com/account/tokens) → [GitHub 시크릿 추가](https://github.com/idaewonjeongseonyagchokkun-crypto/-/settings/secrets/actions/new) | 이름 `VERCEL_TOKEN`과 `ANTHROPIC_API_KEY`로 각각 저장. 이후 배포·키 설정은 자동 |
+| ② GitHub에 비밀값 2개 넣기 (2026-10-25 완료) | [VERCEL_TOKEN 만들기](https://vercel.com/account/tokens) → [GitHub 시크릿 추가](https://github.com/idaewonjeongseonyagchokkun-crypto/-/settings/secrets/actions/new) | 이름 `VERCEL_TOKEN`과 `ANTHROPIC_API_KEY`로 각각 저장. 이후 배포·키 설정은 자동 |
 | ③ 미리보기 페이지 공유 (선택) | [한끼스캔 미리보기](https://claude.ai/artifact/8cuUXGLTcSkdPT5kMZfQBV) | 페이지의 공유 메뉴에서 공유 켜기 |
 | ④ 국내 바코드 DB 키 신청 (선택) | [식품안전나라 Open API](https://www.foodsafetykorea.go.kr/api/main.do) | 발급된 인증키 이름만 알려 주시면 연결 코드를 작성합니다 |
 | ⑤ 원산지 확인 | [스마트스토어](https://smartstore.naver.com/doll3269) | 고추부각·산더덕즙 표시사항의 원산지를 알려 주세요 |
 
-②를 마치면 GitHub Actions가 Vercel 프로젝트(hankki-scan)를 만들고 키를 설정해 배포합니다. 이후 main에 올릴 때마다 자동입니다.
+GitHub Actions가 Vercel 프로젝트(hankki-scan)에 키를 설정해 배포합니다. main에 올릴 때마다 두 주소 모두 자동 갱신됩니다.
 
 ## 실행
 
