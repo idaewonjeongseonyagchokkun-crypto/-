@@ -3,6 +3,7 @@ import { analyzeLabel, lookupBarcode, resizeImage, shareTrend } from '../lib/api
 import { actions, useStore } from '../lib/store';
 import { scoreProduct } from '../lib/nutrition';
 import type { ScannedProduct } from '../lib/types';
+import { IS_PREVIEW } from '../lib/target';
 import { Icon } from '../ui';
 
 // 일부 브라우저(안드로이드 크롬 등)만 지원하는 바코드 인식 API
@@ -60,7 +61,7 @@ export function Scan({ onShop }: { onShop: () => void }) {
   const [live, setLive] = useState(false);
   const video = useRef<HTMLVideoElement>(null);
   const labelInput = useRef<HTMLInputElement>(null);
-  const canDetect = typeof window !== 'undefined' && !!window.BarcodeDetector;
+  const canDetect = !IS_PREVIEW && typeof window !== 'undefined' && !!window.BarcodeDetector;
 
   function keep(draft: Omit<ScannedProduct, 'id' | 'at'>) {
     const saved = actions.addProduct(draft);
@@ -147,6 +148,9 @@ export function Scan({ onShop }: { onShop: () => void }) {
       {live && <button className="btn ghost block" style={{ marginTop: 10 }} onClick={() => setLive(false)}>그만 찍기</button>}
       <input ref={labelInput} className="sr-only" type="file" accept="image/*" capture="environment" onChange={(e) => byLabel(e.target.files?.[0])} aria-label="표시사항 사진 선택" />
 
+      {IS_PREVIEW ? (
+        <p className="small muted" style={{ marginTop: 12 }}>미리보기에서는 바코드 검색이 꺼져 있습니다. 정식 앱에서는 바코드로 공개 식품 DB를 바로 찾습니다.</p>
+      ) : (
       <form className="inline" style={{ marginTop: 16, alignItems: 'end' }} onSubmit={(e) => { e.preventDefault(); if (code) byBarcode(code); }}>
         <label className="field">
           <span className="small muted">바코드 번호로 찾기</span>
@@ -154,6 +158,7 @@ export function Scan({ onShop }: { onShop: () => void }) {
         </label>
         <button className="btn" type="submit" disabled={code.length < 8}>찾기</button>
       </form>
+      )}
 
       {busy && <div className="analyzing" aria-live="polite"><div className="steam" aria-hidden="true"><span /><span /><span /></div>{busy}</div>}
       {error && <div className="notice bad" role="alert">{error}</div>}

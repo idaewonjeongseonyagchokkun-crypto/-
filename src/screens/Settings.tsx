@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import { actions, useStore } from '../lib/store';
+import { IS_PREVIEW } from '../lib/target';
 import { Icon } from '../ui';
 
 export function Settings({ onClose, toast }: { onClose: () => void; toast: (m: string) => void }) {
   const s = useStore((st) => st.settings);
+  const [confirmReset, setConfirmReset] = useState(false);
   const counts = { meals: useStore((st) => st.meals.length), products: useStore((st) => st.products.length) };
 
   function download() {
@@ -35,10 +38,18 @@ export function Settings({ onClose, toast }: { onClose: () => void; toast: (m: s
         </div>
 
         <div style={{ display: 'grid', gap: 10, marginTop: 24 }}>
-          <button className="btn ghost block" onClick={download}>내 기록 파일로 받기</button>
-          <button className="btn ghost block" style={{ borderColor: 'var(--gochu)', color: 'var(--gochu)' }} onClick={() => {
-            if (confirm('이 휴대폰의 모든 식사·스캔·생활 기록을 지웁니다. 되돌릴 수 없습니다.')) { actions.resetAll(); toast('모든 기록을 지웠습니다'); onClose(); }
-          }}>모든 기록 지우기</button>
+          {!IS_PREVIEW && <button className="btn ghost block" onClick={download}>내 기록 파일로 받기</button>}
+          {!confirmReset ? (
+            <button className="btn ghost block" style={{ borderColor: 'var(--gochu)', color: 'var(--gochu)' }} onClick={() => setConfirmReset(true)}>모든 기록 지우기</button>
+          ) : (
+            <div className="notice bad" role="alert">
+              <p style={{ margin: '0 0 10px' }}>이 휴대폰의 모든 식사·스캔·생활 기록을 지웁니다. 되돌릴 수 없습니다.</p>
+              <div className="inline">
+                <button className="btn" style={{ background: 'var(--gochu)', borderColor: 'var(--gochu)' }} onClick={() => { actions.resetAll(); toast('모든 기록을 지웠습니다'); onClose(); }}>지우기</button>
+                <button className="btn ghost" onClick={() => setConfirmReset(false)}>그대로 두기</button>
+              </div>
+            </div>
+          )}
         </div>
 
         <p className="small muted" style={{ marginTop: 28 }}>

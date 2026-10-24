@@ -20,7 +20,18 @@ npm run dev          # http://localhost:5173 — API 키가 없으면 예시값�
 npm run build
 ```
 
-## 배포 (Vercel 권장)
+## 미리보기 페이지 만들기
+
+```bash
+VITE_TARGET=artifact npm run build && node scripts/bundle-artifact.mjs dist/hankki-preview.html
+```
+외부 DB 조회·다운로드가 막힌 환경용으로 바코드 검색을 숨기고, 처음 열면 예시 기록을 채웁니다.
+
+## GitHub Pages (서버 없는 무료 배포)
+
+저장소 **Settings → Pages → Source를 'GitHub Actions'** 로 한 번만 바꾸면, 이후 main에 올릴 때마다 https://idaewonjeongseonyagchokkun-crypto.github.io/-/ 로 자동 배포됩니다. AI 사진 분석은 예시값으로 동작합니다.
+
+## 배포 (Vercel 권장 — AI 분석 포함)
 
 1. vercel.com에서 이 GitHub 저장소를 Import
 2. 환경변수 설정

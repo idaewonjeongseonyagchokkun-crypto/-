@@ -39,7 +39,7 @@ button { cursor: pointer; }
 :focus-visible { outline: 3px solid var(--oil); outline-offset: 2px; }
 img { max-width: 100%; display: block; }
 
-.app { max-width: 480px; margin: 0 auto; min-height: 100dvh; padding: 0 20px calc(var(--tab-h) + 32px + env(safe-area-inset-bottom)); }
+.app { max-width: 480px; margin: 0 auto; min-height: 100dvh; padding-top: 0; padding-bottom: calc(var(--tab-h) + 32px + env(safe-area-inset-bottom, 0px)); padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
 
 /* 머리말 */
 .top { display: flex; align-items: flex-end; justify-content: space-between; padding: 28px 0 8px; }
