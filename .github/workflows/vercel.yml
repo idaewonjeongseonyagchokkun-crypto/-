@@ -34,11 +34,19 @@ jobs:
           node-version: 22
       - name: Check token
         if: env.VERCEL_TOKEN != ''
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           t=$(printf '%s' "$VERCEL_TOKEN" | tr -d '[:space:]')
           echo "VERCEL_TOKEN=$t" >> "$GITHUB_ENV"
           code=$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $t" https://api.vercel.com/v2/user)
           echo "토큰 길이: ${#t}자, Vercel 확인 결과: HTTP $code"
+          k=$(printf '%s' "$ANTHROPIC_API_KEY" | tr -d '[:space:]')
+          case "$k" in
+            sk-ant-*) echo "ANTHROPIC_API_KEY: 형식 정상 (길이 ${#k}자)";;
+            "") echo "::warning::ANTHROPIC_API_KEY 시크릿이 비어 있습니다.";;
+            *) echo "::warning::ANTHROPIC_API_KEY 값이 sk-ant- 로 시작하지 않습니다 (길이 ${#k}자). 키 이름이 아니라 키 값을 넣어 주세요.";;
+          esac
           if [ "$code" != "200" ]; then
             echo "::error::VERCEL_TOKEN 값이 올바른 Vercel 토큰이 아닙니다. https://vercel.com/account/tokens 에서 새로 만든 직후 보이는 값을 그대로 넣어 주세요."
             exit 1
