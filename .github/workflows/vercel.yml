@@ -32,6 +32,17 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Check token
+        if: env.VERCEL_TOKEN != ''
+        run: |
+          t=$(printf '%s' "$VERCEL_TOKEN" | tr -d '[:space:]')
+          echo "VERCEL_TOKEN=$t" >> "$GITHUB_ENV"
+          code=$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $t" https://api.vercel.com/v2/user)
+          echo "토큰 길이: ${#t}자, Vercel 확인 결과: HTTP $code"
+          if [ "$code" != "200" ]; then
+            echo "::error::VERCEL_TOKEN 값이 올바른 Vercel 토큰이 아닙니다. https://vercel.com/account/tokens 에서 새로 만든 직후 보이는 값을 그대로 넣어 주세요."
+            exit 1
+          fi
       - name: Link project
         if: env.VERCEL_TOKEN != ''
         run: npx --yes vercel@latest link --yes --project hankki-scan --token "$VERCEL_TOKEN"
