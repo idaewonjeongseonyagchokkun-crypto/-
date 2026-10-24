@@ -5,6 +5,7 @@ import { fmt, sumItems } from '../lib/nutrition';
 import type { FoodItem, MealSlot } from '../lib/types';
 import { Icon } from '../ui';
 import { IS_PREVIEW } from '../lib/target';
+import { COMMON_FOODS } from '../lib/foods';
 
 const SLOTS: MealSlot[] = ['아침', '점심', '저녁', '간식'];
 const SCALES = [0.5, 0.75, 1, 1.5, 2];
@@ -33,7 +34,8 @@ export function Capture({ onClose, onSaved }: { onClose: () => void; onSaved: (m
   const [photo, setPhoto] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [items, setItems] = useState<FoodItem[] | null>(null);
-  const [source, setSource] = useState<'ai' | 'demo'>('ai');
+  const [source, setSource] = useState<'ai' | 'manual'>('ai');
+  const [query, setQuery] = useState('');
   const [slot, setSlot] = useState<MealSlot>(guessSlot());
   const [scale, setScale] = useState(1);
   const [error, setError] = useState<string | null>(null);
@@ -51,8 +53,9 @@ export function Capture({ onClose, onSaved }: { onClose: () => void; onSaved: (m
       const data = await resizeImage(file);
       setPhoto(data);
       const r = await analyzeMeal(data);
-      setItems(r.items);
-      setSource(r.source);
+      // 자동 인식을 쓸 수 없으면 예시값 대신 사용자가 음식을 고르게 합니다.
+      if (r.source === 'demo') { setItems([]); setSource('manual'); }
+      else { setItems(r.items); setSource('ai'); }
     } catch {
       setError('사진을 읽지 못했습니다. 밝은 곳에서 다시 찍어 보세요.');
     } finally {
@@ -103,12 +106,14 @@ export function Capture({ onClose, onSaved }: { onClose: () => void; onSaved: (m
 
         {items && total && (
           <>
-            {source === 'demo' && <div className="notice">{IS_PREVIEW ? 'Claude 사진 분석을 쓸 수 없어 예시 값을 보여 드립니다. 분석 허용 창이 뜨면 허용을 눌러 주세요.' : 'AI 분석이 아직 연결되지 않아 예시 값을 보여 드립니다. 서버에 API 키를 넣으면 실제 사진을 분석합니다.'}</div>}
-            {items.length === 0 ? (
-              <div className="notice bad">음식을 찾지 못했습니다. 접시가 다 보이게 다시 찍어 보세요.</div>
-            ) : (
+            {source === 'manual' && (
+              <div className="notice">{IS_PREVIEW ? '사진 자동 분석을 허용하지 않아 직접 고르는 방식으로 바꿨어요. 먹은 음식을 아래에서 골라 주세요.' : '사진은 저장했어요. 먹은 음식을 아래에서 골라 주세요. 자동 인식은 곧 추가됩니다.'}</div>
+            )}
+            {items.length === 0 && source === 'ai' ? (
+              <div className="notice bad">음식을 찾지 못했습니다. 접시가 다 보이게 다시 찍거나 아래에서 직접 골라 주세요.</div>
+            ) : items.length === 0 ? null : (
               <>
-                <h2>이렇게 보여요</h2>
+                <h2>{source === 'ai' ? '이렇게 보여요' : '고른 음식'}</h2>
                 <ul className="list">
                   {items.map((it, idx) => (
                     <li key={idx} className="food-row">
@@ -121,6 +126,24 @@ export function Capture({ onClose, onSaved }: { onClose: () => void; onSaved: (m
                     </li>
                   ))}
                 </ul>
+              </>
+            )}
+            <h2>{items.length ? '음식 더하기' : '먹은 음식 고르기'}</h2>
+            <label className="field">
+              <span className="sr-only">음식 이름 찾기</span>
+              <input id="food-search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="예: 김치찌개, 김밥" />
+            </label>
+            <div className="chips" role="group" aria-label="자주 먹는 음식" style={{ marginTop: 10 }}>
+              {COMMON_FOODS.filter((f) => !query || f.name.includes(query.trim())).map((f) => (
+                <button key={f.name} className="chip" onClick={() => { setItems([...(items ?? []), f]); setQuery(''); }}>+ {f.name}</button>
+              ))}
+              {query.trim() && !COMMON_FOODS.some((f) => f.name.includes(query.trim())) && (
+                <span className="small muted">목록에 없는 음식이에요. 비슷한 음식을 골라 주세요.</span>
+              )}
+            </div>
+            <p className="small muted">목록의 열량·영양값은 1인분 대략값입니다.</p>
+            {items.length > 0 && (
+              <>
 
                 <h2>먹은 양</h2>
                 <div className="chips" role="group" aria-label="먹은 양">
