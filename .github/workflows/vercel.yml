@@ -82,13 +82,9 @@ jobs:
       - name: Set Korean barcode DB key (optional)
         if: env.VERCEL_TOKEN != ''
         env:
-          FOODSAFETY_API_KEY: ${{ secrets.FOODSAFETY_API_KEY || vars.FOODSAFETY_API_KEY }}
-          SECRET_NAMES_JSON: ${{ toJSON(secrets) }}
-          VAR_NAMES_JSON: ${{ toJSON(vars) }}
+          # 이름을 조금 다르게 저장한 경우나 '변수(Variables)' 탭에 저장한 경우도 받아 줍니다.
+          FOODSAFETY_API_KEY: ${{ secrets.FOODSAFETY_API_KEY || vars.FOODSAFETY_API_KEY || secrets.FOODSAFETY_KEY || secrets.FOOD_SAFETY_API_KEY || secrets.FOODSAFETYKOREA_API_KEY || secrets.FOODSAFETY_API || secrets.FOODSAFETY_API_KEY_ }}
         run: |
-          # 값은 출력하지 않고 저장된 이름만 보여 줍니다 (이름 오타 확인용)
-          echo "저장된 시크릿 이름: $(printf '%s' "$SECRET_NAMES_JSON" | jq -r 'keys | map(select(. != "github_token")) | join(", ")')"
-          echo "저장된 변수 이름: $(printf '%s' "$VAR_NAMES_JSON" | jq -r 'keys | join(", ")')"
           f=$(printf '%s' "$FOODSAFETY_API_KEY" | tr -d '[:space:]')
           if [ -n "$f" ]; then
             npx --yes vercel@latest env rm FOODSAFETY_API_KEY production --yes --token "$VERCEL_TOKEN" >/dev/null 2>&1 || true
