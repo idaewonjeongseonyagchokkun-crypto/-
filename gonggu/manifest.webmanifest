@@ -1,0 +1,17 @@
+{
+  "name": "아리랑 공구팜",
+  "short_name": "공구팜",
+  "description": "아리랑식품영농조합법인 직접 판매 공동구매",
+  "lang": "ko",
+  "start_url": "./?utm_source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fff6e8",
+  "theme_color": "#b8301c",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
