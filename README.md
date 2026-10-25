@@ -7,7 +7,7 @@
 | 벤치마크 | 배운 점 | 한끼스캔에서 |
 |---|---|---|
 | Cal AI | 입력 부담을 사진 한 장으로 | 가운데 카메라 버튼 → 밥상 사진 → AI가 음식·양·열량·탄단지·나트륨 추정 → 양만 고르고 저장 |
-| Yuka | 장 볼 때마다 쓸 이유 | 바코드(Open Food Facts) 또는 원재료·영양성분표 사진 → 0~100 성분 점수 도장, 이유, 첨가물 목록 |
+| Yuka | 장 볼 때마다 쓸 이유 | 바코드(아이폰 포함 모든 휴대폰, 공유 DB → Open Food Facts → 식품안전나라) 또는 원재료·영양성분표 사진 → 0~100 성분 점수 도장, 이유, 첨가물 목록 |
 | 필라이즈 | 내 생활과 연결된 정보 | 식사·물·수면·활동 7일 리듬, 기록 사실 기반 패턴 문장 (늦은 저녁, 나트륨 기준치 초과일, 단백질 반찬 등) |
 
 회사와의 연결: **정선 탭**에서 제품별 원산지·만든 곳을 공개하고, 점수가 낮은 간식을 스캔하면 정선 간식 비교를 제안합니다. 포장 QR을 `https://도메인/p/<제품코드>`로 만들면 해당 제품 카드가 바로 열립니다 (`gochu-bugak`, `eopo-twigak`, `sandeodeok-juice`, `gochugaru`).
@@ -21,7 +21,7 @@
 | ① Anthropic API 키 만들기 | [콘솔 키 페이지](https://console.anthropic.com/settings/keys) | 키를 복사해 둡니다 (Claude에게 보내지 마세요) |
 | ② GitHub에 비밀값 2개 넣기 (2026-10-25 완료) | [VERCEL_TOKEN 만들기](https://vercel.com/account/tokens) → [GitHub 시크릿 추가](https://github.com/idaewonjeongseonyagchokkun-crypto/-/settings/secrets/actions/new) | 이름 `VERCEL_TOKEN`과 `ANTHROPIC_API_KEY`로 각각 저장. 이후 배포·키 설정은 자동 |
 | ③ 미리보기 페이지 공유 (선택) | [한끼스캔 미리보기](https://claude.ai/artifact/8cuUXGLTcSkdPT5kMZfQBV) | 페이지의 공유 메뉴에서 공유 켜기 |
-| ④ 국내 바코드 DB 키 신청 (선택) | [식품안전나라 Open API](https://www.foodsafetykorea.go.kr/api/main.do) | 발급된 인증키 이름만 알려 주시면 연결 코드를 작성합니다 |
+| ④ 국내 바코드 DB 키 신청 (선택) | [식품안전나라 Open API](https://www.foodsafetykorea.go.kr/api/main.do) | 발급된 인증키를 [GitHub 시크릿](https://github.com/idaewonjeongseonyagchokkun-crypto/-/settings/secrets/actions/new)에 이름 `FOODSAFETY_API_KEY`로 저장하면 자동 연결 (연결 코드는 완성됨) |
 | ⑤ 원산지 확인 | [스마트스토어](https://smartstore.naver.com/doll3269) | 고추부각·산더덕즙 표시사항의 원산지를 알려 주세요 |
 
 GitHub Actions가 Vercel 프로젝트(hankki-scan)에 키를 설정해 배포합니다. main에 올릴 때마다 두 주소 모두 자동 갱신됩니다.
