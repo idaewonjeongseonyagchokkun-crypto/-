@@ -79,6 +79,19 @@ jobs:
             "") echo "::notice::INSIGHTS_WEBHOOK_URL 시크릿이 없어 데이터 시트 연결을 건너뜁니다.";;
             *) echo "::warning::INSIGHTS_WEBHOOK_URL 값이 https://script.google.com/ 으로 시작하지 않습니다. Apps Script 웹 앱 URL 전체를 넣어 주세요.";;
           esac
+      - name: Set Korean barcode DB key (optional)
+        if: env.VERCEL_TOKEN != ''
+        env:
+          FOODSAFETY_API_KEY: ${{ secrets.FOODSAFETY_API_KEY }}
+        run: |
+          f=$(printf '%s' "$FOODSAFETY_API_KEY" | tr -d '[:space:]')
+          if [ -n "$f" ]; then
+            npx --yes vercel@latest env rm FOODSAFETY_API_KEY production --yes --token "$VERCEL_TOKEN" >/dev/null 2>&1 || true
+            printf '%s' "$f" | npx --yes vercel@latest env add FOODSAFETY_API_KEY production --token "$VERCEL_TOKEN"
+            echo "FOODSAFETY_API_KEY: 설정함 (길이 ${#f}자)"
+          else
+            echo "::notice::FOODSAFETY_API_KEY가 없어 국내 식품안전나라 바코드 조회는 건너뜁니다 (공유 DB·Open Food Facts는 동작)."
+          fi
       - name: Connect private data store (once)
         if: env.VERCEL_TOKEN != ''
         run: |

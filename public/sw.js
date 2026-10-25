@@ -1,6 +1,6 @@
 // 앱 화면을 오프라인에서도 열 수 있게 정적 파일만 캐시합니다. API 요청은 캐시하지 않습니다.
 // 경로는 서비스워커 위치 기준이라 루트(/)와 하위 경로(/-/) 배포 모두에서 동작합니다.
-const CACHE = 'hankki-v2';
+const CACHE = 'hankki-v3';
 const BASE = new URL('./', self.location).pathname;
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll([BASE, BASE + 'index.html', BASE + 'icon.svg', BASE + 'manifest.webmanifest'])));

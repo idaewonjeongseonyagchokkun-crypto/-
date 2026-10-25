@@ -34,7 +34,9 @@ export interface ScannedProduct {
   additives: string[];
   ingredientsText?: string;
   nova?: number;
-  source: 'openfoodfacts' | 'label-ai' | 'demo';
+  source: 'openfoodfacts' | 'shared' | 'foodsafety' | 'label-ai' | 'demo';
+  /** 이름만 찾았고 영양성분표는 아직 없음 */
+  partial?: boolean;
 }
 
 export interface DayLog {

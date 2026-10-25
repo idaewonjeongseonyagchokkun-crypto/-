@@ -1,3 +1,4 @@
+import { OFF_FIELDS, fromOff } from './off';
 import type { FoodItem, ScannedProduct } from './types';
 import { detectAdditives } from './nutrition';
 import { IS_PREVIEW } from './target';
@@ -88,7 +89,24 @@ function cleanItem(i: Record<string, unknown>): FoodItem {
   };
 }
 
-type ProductDraft = Omit<ScannedProduct, 'id' | 'at'>;
+const toNum = (v: unknown) => {
+  const n = typeof v === 'number' ? v : typeof v === 'string' ? parseFloat(v.replace(/[^\d.]/g, '')) : NaN;
+  return Number.isFinite(n) && n >= 0 ? n : undefined;
+};
+
+export type ProductDraft = Omit<ScannedProduct, 'id' | 'at'>;
+
+/** 기록에는 작은 미리보기만 남깁니다 (휴대폰 저장 공간 보호) */
+async function smallThumb(dataUrl: string, size = 160) {
+  const img = new Image();
+  img.src = dataUrl;
+  await img.decode();
+  const r = Math.min(1, size / Math.max(img.width, img.height));
+  const c = document.createElement('canvas');
+  c.width = Math.round(img.width * r); c.height = Math.round(img.height * r);
+  c.getContext('2d')!.drawImage(img, 0, 0, c.width, c.height);
+  return c.toDataURL('image/jpeg', 0.7);
+}
 
 /** 원재료·영양성분표 사진을 AI로 읽습니다. */
 export async function analyzeLabel(image: string): Promise<ProductDraft> {
@@ -99,19 +117,21 @@ export async function analyzeLabel(image: string): Promise<ProductDraft> {
       name: String(d.name || '이름 없는 제품').slice(0, 60),
       brand: d.brand ? String(d.brand).slice(0, 40) : undefined,
       per100g: {
-        kcal: d.per100g?.kcal ?? undefined,
-        sugarG: d.per100g?.sugarG ?? undefined,
-        satFatG: d.per100g?.satFatG ?? undefined,
-        sodiumMg: d.per100g?.sodiumMg ?? undefined,
-        fiberG: d.per100g?.fiberG ?? undefined,
-        proteinG: d.per100g?.proteinG ?? undefined,
+        kcal: toNum(d.per100g?.kcal),
+        sugarG: toNum(d.per100g?.sugarG),
+        satFatG: toNum(d.per100g?.satFatG),
+        sodiumMg: toNum(d.per100g?.sodiumMg),
+        fiberG: toNum(d.per100g?.fiberG),
+        proteinG: toNum(d.per100g?.proteinG),
       },
       additives: detectAdditives(ingredients),
       ingredientsText: ingredients.slice(0, 1200),
-      image,
+      image: await smallThumb(image),
       source: 'label-ai',
     };
-  } catch {
+  } catch (e) {
+    // 정식 앱에서는 가짜 예시를 보여 주지 않고 다시 찍도록 안내합니다.
+    if (!IS_PREVIEW) throw e;
     await new Promise((r) => setTimeout(r, 900));
     const ingredients = '밀가루, 설탕, 팜유, 물엿, 정제소금, 합성향료, 산도조절제, 유화제, 카라멜색소';
     return {
@@ -119,43 +139,50 @@ export async function analyzeLabel(image: string): Promise<ProductDraft> {
       per100g: { kcal: 520, sugarG: 24, satFatG: 11, sodiumMg: 480, proteinG: 5 },
       additives: detectAdditives(ingredients),
       ingredientsText: ingredients,
-      image,
+      image: await smallThumb(image),
       source: 'demo',
     };
   }
 }
 
 /** Open Food Facts 공개 DB에서 바코드로 제품을 찾습니다. */
-export async function lookupBarcode(code: string): Promise<ProductDraft | null> {
+export type BarcodeResult = { product: ProductDraft | null; via: 'server' | 'direct' };
+
+/** 바코드 조회: 앱 서버(공유 DB·Open Food Facts·식품안전나라) → 서버가 없으면 Open Food Facts 직접 */
+export async function lookupBarcode(code: string): Promise<BarcodeResult> {
   const clean = code.replace(/\D/g, '');
-  if (clean.length < 8 || clean.length > 14) return null;
-  const fields = 'product_name,product_name_ko,brands,nutriments,additives_tags,nova_group,ingredients_text,ingredients_text_ko,image_front_small_url';
-  const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${clean}.json?fields=${fields}`);
-  if (!res.ok) return null;
+  try {
+    const r = await fetch(`${import.meta.env.BASE_URL}api/barcode?code=${clean}`);
+    const isJson = (r.headers.get('content-type') || '').includes('application/json');
+    if (isJson) {
+      if (r.status === 404) return { product: null, via: 'server' };
+      if (r.status === 400) throw new Error('invalid');
+      if (r.ok) {
+        const { product } = await r.json() as { product: ProductDraft };
+        return { product, via: 'server' };
+      }
+    }
+  } catch (e) {
+    if ((e as Error).message === 'invalid') throw e;
+  }
+  // 예비 주소(GitHub Pages)처럼 서버가 없을 때
+  const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${clean}.json?fields=${OFF_FIELDS}`);
+  if (!res.ok) return { product: null, via: 'direct' };
   const data = await res.json();
-  if (data.status !== 1 || !data.product) return null;
-  const p = data.product;
-  const n = p.nutriments ?? {};
-  const pick = (k: string) => (typeof n[k] === 'number' ? n[k] : undefined);
-  const sodiumG = pick('sodium_100g') ?? (pick('salt_100g') != null ? pick('salt_100g')! / 2.5 : undefined);
-  return {
-    barcode: clean,
-    name: p.product_name_ko || p.product_name || `바코드 ${clean}`,
-    brand: p.brands,
-    image: p.image_front_small_url,
-    per100g: {
-      kcal: pick('energy-kcal_100g'),
-      sugarG: pick('sugars_100g'),
-      satFatG: pick('saturated-fat_100g'),
-      sodiumMg: sodiumG != null ? Math.round(sodiumG * 1000) : undefined,
-      fiberG: pick('fiber_100g'),
-      proteinG: pick('proteins_100g'),
-    },
-    additives: (p.additives_tags ?? []).map((t: string) => t.replace(/^en:/, '').toUpperCase()),
-    ingredientsText: p.ingredients_text_ko || p.ingredients_text,
-    nova: typeof p.nova_group === 'number' ? p.nova_group : undefined,
-    source: 'openfoodfacts',
-  };
+  const p = data.status === 1 ? fromOff(clean, data.product) : null;
+  return { product: p, via: 'direct' };
+}
+
+/** 공유 DB에 없던 바코드를 표시사항 분석 결과로 등록합니다. (사진·개인정보는 보내지 않음) */
+export function contributeProduct(code: string, p: ProductDraft) {
+  if (IS_PREVIEW || p.source !== 'label-ai') return;
+  const { name, brand, per100g, additives, ingredientsText } = p;
+  fetch(`${import.meta.env.BASE_URL}api/barcode`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code, product: { name, brand, per100g, additives, ingredientsText } }),
+    keepalive: true,
+  }).catch(() => {});
 }
 
 /** 사용자가 동의한 경우에만 익명 트렌드(사진·개인정보 제외)를 보냅니다. */

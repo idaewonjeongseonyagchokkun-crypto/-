@@ -7,7 +7,7 @@ function localApi(): Plugin {
     name: 'local-api',
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
-        const match = req.url?.match(/^\/api\/(analyze|events|health)(?:\?|$)/);
+        const match = req.url?.match(/^\/api\/(analyze|events|health|barcode)(?:\?|$)/);
         if (!match) return next();
         try {
           const mod = await server.ssrLoadModule(`/api/${match[1]}.ts`);
