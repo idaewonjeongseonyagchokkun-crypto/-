@@ -103,7 +103,7 @@ export default async function handler(req: Req, res: ServerResponse) {
     const code = (url.searchParams.get('code') || '').replace(/\D/g, '');
     if (!validGtin(code)) return send(res, 400, { error: '바코드 번호가 올바르지 않습니다. 숫자를 다시 확인해 주세요.' });
     const product = (await fromShared(code)) || (await fromOpenFoodFacts(code)) || (await fromFoodSafety(code));
-    if (!product) return send(res, 404, { error: 'not_found' }, 'public, max-age=300');
+    if (!product) return send(res, 404, { error: 'not_found' });
     return send(res, 200, { product }, 'public, max-age=3600');
   }
 
