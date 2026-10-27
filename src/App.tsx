@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Today } from './screens/Today';
-import { Capture } from './screens/Capture';
+import { Capture, type CaptureProps } from './screens/Capture';
 import { Scan } from './screens/Scan';
 import { Rhythm } from './screens/Rhythm';
 import { Jeongseon } from './screens/Jeongseon';
 import { Settings } from './screens/Settings';
 import { Icon, useToast } from './ui';
+import { today } from './lib/store';
 
 type Tab = 'today' | 'scan' | 'rhythm' | 'jeongseon';
 
@@ -20,14 +21,15 @@ function initial(): { tab: Tab; focus?: string } {
 
 export function App() {
   const [{ tab, focus }, setNav] = useState(initial);
-  const [capture, setCapture] = useState(false);
+  const [capture, setCapture] = useState<Pick<CaptureProps, 'editing' | 'date' | 'mode'> | null>(null);
+  const [viewDate, setViewDate] = useState(today());
   const [settings, setSettings] = useState(false);
   const [toastNode, toast] = useToast();
 
   const go = (t: Tab) => { setNav({ tab: t }); window.scrollTo(0, 0); };
 
   useEffect(() => {
-    const close = (e: KeyboardEvent) => { if (e.key === 'Escape') { setCapture(false); setSettings(false); } };
+    const close = (e: KeyboardEvent) => { if (e.key === 'Escape') { setCapture(null); setSettings(false); } };
     window.addEventListener('keydown', close);
     return () => window.removeEventListener('keydown', close);
   }, []);
@@ -42,9 +44,18 @@ export function App() {
   return (
     <>
       <main className="app">
-        {tab === 'today' && <Today onCapture={() => setCapture(true)} onSettings={() => setSettings(true)} />}
+        {tab === 'today' && (
+          <Today
+            date={viewDate}
+            onDate={setViewDate}
+            onCapture={(mode) => setCapture({ mode, date: viewDate })}
+            onEdit={(m) => setCapture({ editing: m })}
+            onSettings={() => setSettings(true)}
+            toast={toast}
+          />
+        )}
         {tab === 'scan' && <Scan onShop={() => go('jeongseon')} />}
-        {tab === 'rhythm' && <Rhythm />}
+        {tab === 'rhythm' && <Rhythm onPickDay={(d) => { setViewDate(d); go('today'); }} />}
         {tab === 'jeongseon' && <Jeongseon focus={focus} />}
       </main>
 
@@ -53,14 +64,14 @@ export function App() {
           {tabs.slice(0, 2).map((t) => (
             <button key={t.id} className="tab" aria-current={tab === t.id ? 'page' : undefined} onClick={() => go(t.id)}><t.icon />{t.label}</button>
           ))}
-          <button className="shutter" onClick={() => setCapture(true)} aria-label="한끼 찍기"><Icon.camera /></button>
+          <button className="shutter" onClick={() => setCapture({ date: tab === 'today' ? viewDate : today() })} aria-label="한끼 기록 (사진·글·고르기)"><Icon.camera /></button>
           {tabs.slice(2).map((t) => (
             <button key={t.id} className="tab" aria-current={tab === t.id ? 'page' : undefined} onClick={() => go(t.id)}><t.icon />{t.label}</button>
           ))}
         </nav>
       </div>
 
-      {capture && <Capture onClose={() => setCapture(false)} onSaved={(m) => { setCapture(false); go('today'); toast(m); }} />}
+      {capture && <Capture {...capture} onClose={() => setCapture(null)} onSaved={(m, d) => { setCapture(null); setViewDate(d); go('today'); toast(m); }} />}
       {settings && <Settings onClose={() => setSettings(false)} toast={toast} />}
       {toastNode}
     </>

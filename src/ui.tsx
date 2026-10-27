@@ -9,6 +9,10 @@ export const Icon = {
   rhythm: () => (<svg viewBox="0 0 24 24" aria-hidden="true" {...P}><path d="M3 12h4l2-6 4 12 2-6h6" /></svg>),
   mountain: () => (<svg viewBox="0 0 24 24" aria-hidden="true" {...P}><path d="M2 19l7-11 4 6 3-4 6 9z" /></svg>),
   gear: () => (<svg viewBox="0 0 24 24" aria-hidden="true" {...P}><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" /></svg>),
+  pen: () => (<svg viewBox="0 0 24 24" aria-hidden="true" {...P}><path d="M4 20h4L19 9l-4-4L4 16z" /><path d="M14 6l4 4" /></svg>),
+  list: () => (<svg viewBox="0 0 24 24" aria-hidden="true" {...P}><path d="M9 6h11M9 12h11M9 18h11" /><circle cx="4.5" cy="6" r="1" /><circle cx="4.5" cy="12" r="1" /><circle cx="4.5" cy="18" r="1" /></svg>),
+  left: () => (<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" {...P}><path d="M15 5l-7 7 7 7" /></svg>),
+  right: () => (<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" {...P}><path d="M9 5l7 7-7 7" /></svg>),
   close: () => (<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" {...P}><path d="M6 6l12 12M18 6L6 18" /></svg>),
 };
 
@@ -37,13 +41,22 @@ export function Bowl({ ratio }: { ratio: number }) {
   );
 }
 
+export type ToastMsg = string | { text: string; action?: { label: string; run: () => void } };
+
+/** 짧은 알림. 되돌리기 같은 버튼을 붙이면 조금 더 오래 보여 줍니다. */
 export function useToast() {
-  const [msg, setMsg] = useState<string | null>(null);
+  const [msg, setMsg] = useState<ToastMsg | null>(null);
   useEffect(() => {
     if (!msg) return;
-    const t = setTimeout(() => setMsg(null), 2200);
+    const t = setTimeout(() => setMsg(null), typeof msg === 'string' || !msg.action ? 2400 : 5000);
     return () => clearTimeout(t);
   }, [msg]);
-  const node = msg ? <div className="toast" role="status">{msg}</div> : null;
+  const m = typeof msg === 'string' ? { text: msg } : msg;
+  const node = m ? (
+    <div className="toast" role="status">
+      <span>{m.text}</span>
+      {m.action && <button className="toast-btn" onClick={() => { m.action!.run(); setMsg(null); }}>{m.action.label}</button>}
+    </div>
+  ) : null;
   return [node, setMsg] as const;
 }

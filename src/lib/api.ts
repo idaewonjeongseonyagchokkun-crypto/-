@@ -2,7 +2,7 @@ import { OFF_FIELDS, fromOff } from './off';
 import type { FoodItem, ScannedProduct } from './types';
 import { detectAdditives } from './nutrition';
 import { IS_PREVIEW } from './target';
-import { LABEL_PROMPT, MEAL_PROMPT } from './prompts';
+import { LABEL_PROMPT, MEAL_PROMPT, TEXT_PROMPT } from './prompts';
 
 /** claude.ai 미리보기 페이지가 제공하는 'Claude에게 묻기' 기능 (API 키 불필요, 보는 사람의 Claude 계정 사용) */
 type SampleFn = { json: (input: string, opts: { images: Blob[]; modelTier?: string; cache?: boolean }) => Promise<unknown> };
@@ -49,6 +49,31 @@ async function postAnalyze(mode: 'meal' | 'label', image: string, hint?: string)
 export interface MealAnalysis {
   items: FoodItem[];
   source: 'ai' | 'demo';
+}
+
+/** 글로 적은 식단("김치찌개 한 그릇, 밥 반 공기")을 음식별 영양 추정값으로 바꿉니다. 연결이 없으면 null. */
+export async function analyzeText(text: string): Promise<FoodItem[] | null> {
+  const clean = text.replace(/[<>\r\n]/g, ' ').trim().slice(0, 300);
+  if (!clean) return [];
+  try {
+    let data: any;
+    if (IS_PREVIEW) {
+      const sample = (await window.claude?.use('sample')) as SampleFn | null | undefined;
+      if (!sample) return null;
+      data = await sample.json(`${TEXT_PROMPT}\n<식단>${clean}</식단>`, { images: [], cache: false });
+    } else {
+      const res = await fetch(`${import.meta.env.BASE_URL}api/analyze`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'text', text: clean }),
+      });
+      if (!res.ok) return null;
+      data = await res.json();
+    }
+    return Array.isArray(data?.items) ? data.items.slice(0, 12).map(cleanItem) : null;
+  } catch {
+    return null;
+  }
 }
 
 export async function analyzeMeal(image: string, hint?: string): Promise<MealAnalysis> {

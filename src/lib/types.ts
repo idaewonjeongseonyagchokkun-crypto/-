@@ -11,6 +11,8 @@ export interface FoodItem {
   sodiumMg: number;
   sugarG: number;
   confidence: number; // 0~1
+  /** 사용자가 직접 입력한 음식 (영양값을 사용자가 적었거나 모름) */
+  custom?: boolean;
 }
 
 export interface Meal {
@@ -20,7 +22,9 @@ export interface Meal {
   items: FoodItem[];
   portionScale: number; // 사용자가 조정한 양 (0.5 ~ 2)
   photo?: string; // 작은 썸네일 dataURL
-  source: 'ai' | 'demo' | 'manual';
+  /** ai: 사진 분석, text: 글로 쓴 식단을 AI가 추정, manual: 목록·직접 입력, demo: 예시 */
+  source: 'ai' | 'text' | 'demo' | 'manual';
+  memo?: string; // 사용자가 적은 메모 (이 기기에만 저장, 공유하지 않음)
 }
 
 export interface ScannedProduct {
@@ -50,7 +54,11 @@ export interface Settings {
   shareTrends: boolean;
   anonId: string;
   name?: string;
+  /** 마지막으로 쓴 기록 방법 (다음에 그 화면부터 엽니다) */
+  entryMode?: EntryMode;
 }
+
+export type EntryMode = 'photo' | 'write' | 'pick';
 
 export interface Score {
   value: number; // 0~100

@@ -40,8 +40,90 @@ const ROWS: Row[] = [
   ['우유', '1잔 (200ml)', 130, 10, 6, 7, 100, 10],
   ['카페라테', '1잔', 180, 15, 9, 9, 140, 14],
   ['아메리카노', '1잔', 10, 1, 1, 0, 5, 0],
+  ['순두부찌개', '1그릇', 230, 10, 15, 14, 1500, 3],
+  ['육개장', '1그릇', 260, 12, 22, 13, 2000, 3],
+  ['냉면', '1그릇', 560, 105, 18, 6, 2100, 15],
+  ['돈가스', '1인분', 650, 50, 28, 37, 900, 6],
+  ['햄버거', '1개', 520, 45, 25, 26, 950, 9],
+  ['샌드위치', '1개', 380, 40, 15, 17, 800, 6],
+  ['토스트', '1개', 340, 38, 10, 16, 500, 10],
+  ['삶은달걀', '1개', 75, 1, 6, 5, 60, 0],
+  ['고구마', '1개 (150g)', 190, 45, 2, 0, 20, 10],
+  ['감자', '1개 (150g)', 110, 26, 3, 0, 10, 1],
+  ['요거트', '1개 (100g)', 90, 14, 4, 2, 50, 12],
+  ['두유', '1팩 (190ml)', 120, 12, 6, 5, 110, 9],
+  ['오트밀', '1그릇 (40g)', 150, 27, 5, 3, 5, 1],
+  ['떡', '3조각 (100g)', 230, 52, 4, 0, 200, 8],
+  ['만두', '5개', 300, 35, 12, 12, 650, 3],
+  ['곤드레밥', '1공기', 330, 66, 7, 4, 350, 1],
+  ['감자전', '1장', 250, 32, 4, 12, 350, 1],
+  ['메밀전병', '2개', 280, 40, 8, 10, 700, 2],
+  ['콧등치기국수', '1그릇', 430, 80, 14, 5, 1700, 3],
+  ['올챙이국수', '1그릇', 380, 78, 6, 4, 1200, 4],
 ];
 
 export const COMMON_FOODS: FoodItem[] = ROWS.map(([name, portion, kcal, carbG, proteinG, fatG, sodiumMg, sugarG]) => ({
   name, portion, kcal, carbG, proteinG, fatG, sodiumMg, sugarG, confidence: 0.5,
 }));
+
+/** 흔히 줄여 부르는 이름 → 목록 이름 */
+const ALIAS: Record<string, string> = {
+  '밥': '흰밥', '공기밥': '흰밥', '쌀밥': '흰밥', '현미밥': '잡곡밥', '김치': '배추김치', '계란': '삶은달걀', '달걀': '삶은달걀',
+  '계란프라이': '계란후라이', '달걀프라이': '계란후라이', '나물': '나물무침', '삼겹살': '삼겹살구이', '고등어': '고등어구이',
+  '커피': '아메리카노', '라떼': '카페라테', '요구르트': '요거트', '짬뽕': '칼국수', '국수': '칼국수', '된장국': '된장찌개',
+};
+
+const NUM_WORD: Record<string, number> = { '반': 0.5, '한': 1, '하나': 1, '두': 2, '둘': 2, '세': 3, '셋': 3, '네': 4, '넷': 4, '다섯': 5 };
+const UNIT = '(?:개|공기|그릇|인분|줄|조각|잔|컵|접시|장|봉지|팩|토막|쪽|알|숟가락|숟갈|점)';
+
+/** "반 공기", "2개", "두 그릇", "1.5인분" 같은 양 표현을 배수로 읽습니다. */
+function readQty(segment: string): number {
+  const num = segment.match(new RegExp(`(\\d+(?:\\.\\d+)?)\\s*${UNIT}`));
+  if (num) return Math.min(10, parseFloat(num[1]));
+  const word = segment.match(new RegExp(`(반|한|하나|두|둘|세|셋|네|넷|다섯)\\s*(?:${UNIT}|$)`));
+  if (word) return NUM_WORD[word[1]];
+  if (/조금|살짝|약간/.test(segment)) return 0.5;
+  if (/많이|곱빼기|가득/.test(segment)) return 1.5;
+  return 1;
+}
+
+export function findFood(name: string, extra: FoodItem[] = []): FoodItem | undefined {
+  const n = name.replace(/\s/g, '');
+  const all = [...extra, ...COMMON_FOODS];
+  return all.find((f) => f.name === n) ?? all.find((f) => f.name === ALIAS[n]);
+}
+
+export interface ParsedFood { food: FoodItem; qty: number }
+
+/**
+ * 인터넷 연결이나 AI 없이도 글로 쓴 식단을 읽습니다.
+ * 목록에 있는 음식은 영양 대략값을 채우고, 없는 음식은 이름만 남겨 열량을 직접 적게 합니다.
+ */
+export function parseMealText(text: string, extra: FoodItem[] = []): ParsedFood[] {
+  const segments = text
+    .split(/[,，、+/·\n]|(?:이랑|랑|하고|그리고|및|에다)/)
+    .map((x) => x.trim())
+    .filter(Boolean);
+  const names = [...extra.map((f) => f.name), ...COMMON_FOODS.map((f) => f.name), ...Object.keys(ALIAS)].sort((a, b) => b.length - a.length);
+  const out: ParsedFood[] = [];
+  for (const seg of segments.slice(0, 12)) {
+    const compact = seg.replace(/\s/g, '');
+    const hit = names.find((n) => compact.includes(n));
+    const qty = readQty(seg);
+    if (hit) {
+      const food = findFood(hit, extra)!;
+      out.push({ food, qty });
+      continue;
+    }
+    // 양·조사 표현을 걷어 내고 남은 말을 음식 이름으로 씁니다.
+    const name = seg
+      .replace(new RegExp(`(\\d+(?:\\.\\d+)?|반|한|하나|두|둘|세|셋|네|넷|다섯)?\\s*${UNIT}`, 'g'), '')
+      .replace(/조금|살짝|약간|많이|곱빼기|가득|먹었(?:어|음|다|어요)?|마셨(?:어|음|다|어요)?|(?:을|를|은|는|이|가)$/g, '')
+      .trim()
+      .slice(0, 30);
+    if (name.length >= 1 && /[가-힣a-zA-Z]/.test(name)) {
+      out.push({ food: { name, portion: '1인분', kcal: 0, carbG: 0, proteinG: 0, fatG: 0, sodiumMg: 0, sugarG: 0, confidence: 0, custom: true }, qty });
+    }
+  }
+  return out;
+}

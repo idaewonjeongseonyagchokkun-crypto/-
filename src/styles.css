@@ -34,7 +34,7 @@ body {
   -webkit-font-smoothing: antialiased;
   word-break: keep-all;
 }
-button, input, select { font: inherit; color: inherit; }
+button, input, select, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; }
 :focus-visible { outline: 3px solid var(--oil); outline-offset: 2px; }
 img { max-width: 100%; display: block; }
@@ -119,7 +119,15 @@ h3 { font-size: 1rem; font-weight: 600; margin: 0; }
 .notice { padding: 12px 14px; border-radius: var(--r-sm); background: var(--oil-wash); color: #6B4A10; font-size: 0.88rem; margin: 12px 0; }
 .notice.bad { background: var(--gochu-wash); color: #6E1E10; }
 
-.food-row { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; }
+.food-row { display: grid; grid-template-columns: 1fr auto auto auto; gap: 8px; align-items: center; }
+.food-name { background: none; border: 0; padding: 0; text-align: left; min-width: 0; }
+.food-name h3 { overflow-wrap: anywhere; }
+.need { color: var(--gochu); font-weight: 600; }
+.qty { display: flex; align-items: center; gap: 2px; }
+.qty button { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); background: var(--mist); font-size: 1rem; line-height: 1; }
+.qty button:disabled { opacity: .35; }
+.qty output { min-width: 3.2em; text-align: center; font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+@media (max-width: 360px) { .food-row { grid-template-columns: 1fr auto auto; } .food-row .kcal { display: none; } }
 .x-btn { width: 36px; height: 36px; border-radius: 50%; border: 0; background: transparent; color: var(--ink-soft); }
 .x-btn:hover { background: var(--line); }
 
@@ -183,3 +191,58 @@ h3 { font-size: 1rem; font-weight: 600; margin: 0; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* 기록 방법 고르기 */
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; background: var(--paper); border: 1px solid var(--line); border-radius: 999px; margin-bottom: 16px; }
+.seg button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 42px; border: 0; border-radius: 999px; background: transparent; color: var(--ink-soft); font-weight: 600; font-size: 0.92rem; }
+.seg button svg { width: 18px; height: 18px; }
+.seg button[aria-selected='true'] { background: var(--namul); color: var(--paper); }
+.big-tap { width: 100%; padding: 44px 16px; }
+.big-tap svg { width: 36px; height: 36px; }
+.photo-again { position: absolute; right: 12px; bottom: 12px; background: var(--paper); min-height: 40px; }
+textarea { width: 100%; padding: 12px 14px; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--paper); resize: vertical; line-height: 1.5; }
+.chip.small { min-height: 34px; font-size: 0.82rem; color: var(--ink-soft); }
+.chip.mine { border-color: var(--namul); color: var(--namul-deep); background: var(--namul-wash); }
+.chip.dashed { border-style: dashed; border-color: var(--namul); color: var(--namul-deep); }
+.chip-label { flex-basis: 100%; font-size: 0.8rem; color: var(--ink-soft); margin-top: 6px; }
+.repeat-row { display: grid; gap: 8px; }
+.repeat { display: grid; text-align: left; gap: 2px; padding: 10px 14px; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--paper); min-width: 0; }
+.repeat:hover, .chip:hover { border-color: var(--namul); }
+
+/* 직접 입력 폼 */
+.editor { margin-top: 16px; padding: 16px; background: var(--paper); border: 1px solid var(--namul); border-radius: var(--r-lg); animation: rise .2s ease-out; }
+.num-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px; }
+.check { display: flex; gap: 10px; align-items: center; margin-top: 12px; }
+.check input { width: 20px; height: 20px; accent-color: var(--namul); }
+.memo { margin-top: 16px; }
+.memo summary { color: var(--namul-deep); cursor: pointer; }
+.memo textarea { margin-top: 8px; }
+.field input[type='date'], .field input[type='time'] { appearance: none; }
+
+/* 날짜 넘기기 */
+.day-nav { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.day-nav p { margin: 0 !important; min-width: 8.5em; text-align: center; }
+.icon-btn.sm { width: 32px; height: 32px; }
+.icon-btn:disabled { opacity: .3; cursor: default; }
+
+/* 끼니 도장 */
+.stamps { display: flex; gap: 12px; justify-content: center; align-items: center; margin-top: 14px; }
+.meal-stamp { width: 66px; height: 66px; border-radius: 50%; border: 2px dashed var(--line); background: var(--paper); display: grid; place-content: center; text-align: center; color: var(--ink-soft); font-family: var(--serif); line-height: 1.15; }
+.meal-stamp b { font-size: 0.9rem; }
+.meal-stamp span { font-size: 0.8rem; }
+.meal-stamp.done { border: 3px solid var(--gochu); color: var(--gochu); transform: rotate(-8deg); background: var(--gochu-wash); animation: thump .35s ease-out; cursor: default; }
+.meal-stamp.done span { font-weight: 700; font-size: 0.95rem; }
+@keyframes thump { 0% { transform: scale(1.5) rotate(-8deg); opacity: 0; } 70% { transform: scale(.95) rotate(-8deg); opacity: 1; } 100% { transform: rotate(-8deg); } }
+.streak { padding-left: 12px; border-left: 1px solid var(--line); font-size: 0.75rem; color: var(--ink-soft); line-height: 1.25; }
+.streak b { font-family: var(--serif); font-size: 1.5rem; color: var(--oil); }
+
+/* 기록 목록 */
+.meal-open { display: flex; gap: 14px; align-items: center; flex: 1; min-width: 0; background: none; border: 0; padding: 0; text-align: left; }
+.memo-line { color: var(--namul-deep); }
+.cups { display: flex; gap: 6px; align-items: center; padding: 0 16px 14px; }
+.cups i { width: 18px; height: 24px; border: 2px solid var(--line); border-top: 0; border-radius: 0 0 5px 5px; }
+.cups i.on { border-color: #4A7FA7; background: linear-gradient(to top, #A9CBE3 70%, transparent 70%); }
+
+.toast { display: flex; align-items: center; gap: 14px; max-width: calc(100vw - 32px); }
+.toast-btn { background: none; border: 0; color: var(--oil-wash); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; padding: 4px 0; white-space: nowrap; }
+.week .col { background: none; border: 0; padding: 0; cursor: pointer; }
