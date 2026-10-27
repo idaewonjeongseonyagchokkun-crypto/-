@@ -21,6 +21,16 @@ export function mealsOn(meals: Meal[], date: string) {
   return meals.filter((m) => today(new Date(m.at)) === date);
 }
 
+/** 오늘(또는 오늘 아직 안 적었으면 어제)부터 거꾸로 이어진 기록 일수 */
+export function streakDays(meals: Meal[]) {
+  const days = new Set(meals.map((m) => today(new Date(m.at))));
+  const d = new Date();
+  if (!days.has(today(d))) d.setDate(d.getDate() - 1);
+  let n = 0;
+  while (days.has(today(d)) && n < 366) { n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+
 /**
  * 기록에서 생활 패턴을 찾아 문장으로 돌려줍니다.
  * 모든 문장은 '기록 사실'만 말하고, 건강 효과나 질병과 연결하지 않습니다.
@@ -31,16 +41,18 @@ export function buildInsights(meals: Meal[], days: Record<string, DayLog>, produ
   const loggedDays = week.filter((d) => mealsOn(meals, d).length > 0);
 
   if (loggedDays.length === 0) {
-    return [{ title: '첫 한끼를 찍어 보세요', body: '사진을 세 끼 이상 남기면 나만의 식사 패턴이 여기에 정리됩니다.', tone: 'info' }];
+    return [{ title: '첫 한끼를 남겨 보세요', body: '사진을 찍거나 한 줄로 적어 세 끼 이상 남기면 나만의 식사 패턴이 여기에 정리됩니다.', tone: 'info' }];
   }
 
   // 연속 기록
-  let streak = 0;
-  for (let i = week.length - 1; i >= 0; i--) {
-    if (mealsOn(meals, week[i]).length > 0) streak++;
-    else break;
-  }
+  const streak = streakDays(meals);
   if (streak >= 2) out.push({ title: `${streak}일 연속 기록 중`, body: '기록이 쌓일수록 패턴 분석이 정확해집니다.', tone: 'good' });
+
+  // 세 끼 도장
+  const full = loggedDays.filter((d) => ['아침', '점심', '저녁'].every((x) => mealsOn(meals, d).some((m) => m.slot === x))).length;
+  if (full >= 1) out.push({ title: `세 끼 도장 완성 ${full}일`, body: '아침·점심·저녁을 모두 남긴 날입니다. 빠짐없이 적을수록 하루 합계가 실제에 가까워집니다.', tone: 'good' });
+  const breakfast = loggedDays.filter((d) => mealsOn(meals, d).some((m) => m.slot === '아침')).length;
+  if (loggedDays.length >= 4 && breakfast <= 1) out.push({ title: `아침 기록 ${breakfast}일`, body: `이번 주 기록한 ${loggedDays.length}일 중 아침 기록이 있는 날입니다. 먹었는데 빠뜨렸다면 '글로 적기'로 지난 날짜에도 남길 수 있어요.`, tone: 'info' });
 
   // 늦은 저녁
   const late = loggedDays.filter((d) => mealsOn(meals, d).some((m) => new Date(m.at).getHours() >= 21)).length;

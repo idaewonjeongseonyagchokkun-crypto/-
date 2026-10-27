@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react';
-import type { DayLog, Meal, ScannedProduct, Settings } from './types';
+import type { DayLog, FoodItem, Meal, ScannedProduct, Settings } from './types';
 import { IS_PREVIEW } from './target';
 
 /** 모든 기록은 이 기기(localStorage)에만 저장됩니다. */
@@ -8,6 +8,8 @@ interface State {
   products: ScannedProduct[];
   days: Record<string, DayLog>;
   settings: Settings;
+  /** 사용자가 직접 만든 음식 (다음에 한 번에 고를 수 있게) */
+  myFoods: FoodItem[];
 }
 
 const KEY = 'hankki:v1';
@@ -17,7 +19,7 @@ function uid() {
 }
 
 function load(): State {
-  const empty: State = { meals: [], products: [], days: {}, settings: { shareTrends: false, anonId: uid() } };
+  const empty: State = { meals: [], products: [], days: {}, settings: { shareTrends: false, anonId: uid() }, myFoods: [] };
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return IS_PREVIEW ? exampleState(empty) : empty;
@@ -57,6 +59,11 @@ function exampleState(base: State): State {
   };
 }
 
+/** 최근 식사가 앞에 오도록 (지난 날짜로 적은 기록도 제자리에) */
+function sortMeals(meals: Meal[]) {
+  return [...meals].sort((a, b) => b.at.localeCompare(a.at));
+}
+
 let state: State = load();
 const listeners = new Set<() => void>();
 
@@ -88,11 +95,29 @@ export const actions = {
   newId: uid,
   addMeal(meal: Omit<Meal, 'id'>) {
     const m = { ...meal, id: uid() };
-    commit({ ...state, meals: [m, ...state.meals].slice(0, 500) });
+    commit({ ...state, meals: sortMeals([m, ...state.meals]).slice(0, 800) });
     return m;
   },
+  updateMeal(id: string, patch: Omit<Meal, 'id'>) {
+    commit({ ...state, meals: sortMeals(state.meals.map((m) => (m.id === id ? { ...patch, id } : m))) });
+  },
+  /** 지운 기록을 돌려받을 수 있게 지운 식사를 돌려줍니다. */
   removeMeal(id: string) {
+    const gone = state.meals.find((m) => m.id === id);
     commit({ ...state, meals: state.meals.filter((m) => m.id !== id) });
+    return gone;
+  },
+  restoreMeal(meal: Meal) {
+    if (state.meals.some((m) => m.id === meal.id)) return;
+    commit({ ...state, meals: sortMeals([meal, ...state.meals]) });
+  },
+  /** 직접 입력한 음식을 '내 음식'에 남깁니다. 같은 이름이면 새 값으로 바꿉니다. */
+  saveMyFood(f: FoodItem) {
+    const item = { ...f, custom: true };
+    commit({ ...state, myFoods: [item, ...state.myFoods.filter((x) => x.name !== f.name)].slice(0, 60) });
+  },
+  removeMyFood(name: string) {
+    commit({ ...state, myFoods: state.myFoods.filter((x) => x.name !== name) });
   },
   addProduct(p: Omit<ScannedProduct, 'id' | 'at'>) {
     const item = { ...p, id: uid(), at: new Date().toISOString() };
@@ -110,7 +135,7 @@ export const actions = {
     return JSON.stringify({ ...state, settings: { ...state.settings, anonId: undefined } }, null, 2);
   },
   resetAll() {
-    commit({ meals: [], products: [], days: {}, settings: { shareTrends: false, anonId: uid() } });
+    commit({ meals: [], products: [], days: {}, settings: { shareTrends: false, anonId: uid() }, myFoods: [] });
   },
   snapshot: () => state,
 };

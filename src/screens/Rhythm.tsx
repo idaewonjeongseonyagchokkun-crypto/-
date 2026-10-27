@@ -16,7 +16,7 @@ function Stepper({ label, unit, value, step, max, onChange }: { label: string; u
   );
 }
 
-export function Rhythm() {
+export function Rhythm({ onPickDay }: { onPickDay: (date: string) => void }) {
   const meals = useStore((s) => s.meals);
   const days = useStore((s) => s.days);
   const products = useStore((s) => s.products);
@@ -36,16 +36,16 @@ export function Rhythm() {
         </div>
       </header>
 
-      <div className="week" role="img" aria-label={`최근 7일 열량 추정치: ${week.map((w, i) => `${w.slice(5)} ${Math.round(kcals[i])}kcal`).join(', ')}`}>
+      <div className="week" role="group" aria-label="최근 7일 열량 추정치. 날짜를 누르면 그날 기록을 엽니다">
         {week.map((w, i) => (
-          <div key={w} className={`col${w === t ? ' today' : ''}`}>
+          <button key={w} className={`col${w === t ? ' today' : ''}`} onClick={() => onPickDay(w)} aria-label={`${w.slice(5).replace('-', '월 ')}일 ${Math.round(kcals[i])}kcal, 기록 보기`}>
             <span>{kcals[i] ? fmt(kcals[i]) : ''}</span>
             <i style={{ height: `${Math.max(4, (kcals[i] / max) * 90)}px` }} />
-            <span>{new Date(w).toLocaleDateString('ko-KR', { weekday: 'narrow' })}</span>
-          </div>
+            <span>{new Date(w + 'T12:00').toLocaleDateString('ko-KR', { weekday: 'narrow' })}</span>
+          </button>
         ))}
       </div>
-      <p className="small muted" style={{ marginTop: 6 }}>하루 열량 추정치 (kcal)</p>
+      <p className="small muted" style={{ marginTop: 6 }}>하루 열량 추정치 (kcal) · 막대를 누르면 그날 기록을 보고 빠진 끼니를 더할 수 있어요</p>
 
       <h2>이번 주 발견한 것</h2>
       <ul className="list">

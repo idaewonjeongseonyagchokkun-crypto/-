@@ -6,7 +6,7 @@ import { Icon } from '../ui';
 export function Settings({ onClose, toast }: { onClose: () => void; toast: (m: string) => void }) {
   const s = useStore((st) => st.settings);
   const [confirmReset, setConfirmReset] = useState(false);
-  const counts = { meals: useStore((st) => st.meals.length), products: useStore((st) => st.products.length) };
+  const counts = { meals: useStore((st) => st.meals.length), products: useStore((st) => st.products.length), mine: useStore((st) => st.myFoods.length) };
 
   function download() {
     const blob = new Blob([actions.exportJson()], { type: 'application/json' });
@@ -25,14 +25,14 @@ export function Settings({ onClose, toast }: { onClose: () => void; toast: (m: s
           <button className="icon-btn" onClick={onClose} aria-label="닫기"><Icon.close /></button>
         </div>
 
-        <p className="muted">식사 사진과 기록은 이 휴대폰에만 저장됩니다. 지금까지 식사 {counts.meals}건, 제품 {counts.products}건을 기록했습니다.</p>
+        <p className="muted">식사 사진과 기록은 이 휴대폰에만 저장됩니다. 지금까지 식사 {counts.meals}건, 제품 {counts.products}건을 기록했고, 내 음식 {counts.mine}가지를 만들었습니다.</p>
 
         <div className="list" style={{ marginTop: 16 }}>
           <label className="switch">
             <input type="checkbox" checked={s.shareTrends} onChange={(e) => { actions.updateSettings({ shareTrends: e.target.checked }); toast(e.target.checked ? '익명 트렌드 공유를 켰습니다' : '익명 트렌드 공유를 껐습니다'); }} />
             <span>
               <h3>익명 트렌드 공유</h3>
-              <span className="small muted">음식 이름, 추정 열량·나트륨·단백질, 식사 시각(시 단위), 스캔한 제품명과 점수만 보냅니다. 사진·이름·위치는 보내지 않습니다. 모인 경향은 아리랑식품의 새 제품을 만드는 데 쓰입니다. 언제든 끌 수 있습니다.</span>
+              <span className="small muted">음식 이름(사진·글·직접 기록 모두), 추정 열량·나트륨·단백질, 식사 시각(시 단위), 기록 방법, 스캔한 제품명과 점수만 보냅니다. 사진·메모·이름·위치는 보내지 않습니다. 모인 경향은 아리랑식품의 새 제품을 만드는 데 쓰입니다. 언제든 끌 수 있습니다.</span>
             </span>
           </label>
         </div>

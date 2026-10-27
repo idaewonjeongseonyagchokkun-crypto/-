@@ -1,10 +1,10 @@
 /**
- * POST /api/analyze — 식사 사진 또는 제품 라벨 사진을 Claude로 분석합니다. (Vercel 서버리스 함수)
+ * POST /api/analyze — 식사 사진, 제품 라벨 사진, 또는 글로 적은 식단을 Claude로 분석합니다. (Vercel 서버리스 함수)
  * 환경변수: ANTHROPIC_API_KEY (필수), CLAUDE_MODEL (선택, 기본 claude-haiku-5-5)
  * API 키는 서버에만 있고 브라우저로 내려가지 않습니다.
  */
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { LABEL_PROMPT, MEAL_PROMPT } from '../src/lib/prompts.js';
+import { LABEL_PROMPT, MEAL_PROMPT, TEXT_PROMPT } from '../src/lib/prompts.js';
 
 type Req = IncomingMessage & { body?: unknown };
 type Res = ServerResponse;
@@ -44,20 +44,31 @@ export default async function handler(req: Req, res: Res) {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) return send(res, 503, { error: 'AI 분석이 아직 연결되지 않았습니다.' });
 
-  let body: { mode?: unknown; image?: unknown; hint?: unknown };
+  let body: { mode?: unknown; image?: unknown; hint?: unknown; text?: unknown };
   try {
     body = (await readBody(req)) as typeof body;
   } catch {
     return send(res, 413, { error: '사진이 너무 크거나 형식이 올바르지 않습니다.' });
   }
 
-  const mode = body.mode === 'label' ? 'label' : body.mode === 'meal' ? 'meal' : null;
-  const image = typeof body.image === 'string' ? body.image : '';
-  const m = image.length <= MAX_IMAGE_CHARS ? DATA_URL.exec(image) : null;
-  if (!mode || !m) return send(res, 400, { error: 'JPEG·PNG·WEBP 사진만 분석할 수 있습니다.' });
-
-  const hint = typeof body.hint === 'string' ? body.hint.slice(0, 80).replace(/[\r\n]/g, ' ') : '';
-  const prompt = mode === 'meal' ? MEAL_PROMPT + (hint ? `\n사용자 메모: ${hint}` : '') : LABEL_PROMPT;
+  const mode = body.mode === 'label' ? 'label' : body.mode === 'meal' ? 'meal' : body.mode === 'text' ? 'text' : null;
+  let content: unknown[];
+  if (mode === 'text') {
+    // 글로 쓴 식단: 사진 없이 글만 받습니다. 줄바꿈·꺾쇠는 지워 지시문과 섞이지 않게 합니다.
+    const text = typeof body.text === 'string' ? body.text.replace(/[<>\r\n]/g, ' ').trim().slice(0, 300) : '';
+    if (!text) return send(res, 400, { error: '먹은 음식을 적어 주세요.' });
+    content = [{ type: 'text', text: `${TEXT_PROMPT}\n<식단>${text}</식단>` }];
+  } else {
+    const image = typeof body.image === 'string' ? body.image : '';
+    const m = image.length <= MAX_IMAGE_CHARS ? DATA_URL.exec(image) : null;
+    if (!mode || !m) return send(res, 400, { error: 'JPEG·PNG·WEBP 사진만 분석할 수 있습니다.' });
+    const hint = typeof body.hint === 'string' ? body.hint.slice(0, 80).replace(/[\r\n]/g, ' ') : '';
+    const prompt = mode === 'meal' ? MEAL_PROMPT + (hint ? `\n사용자 메모: ${hint}` : '') : LABEL_PROMPT;
+    content = [
+      { type: 'image', source: { type: 'base64', media_type: m[1], data: m[2] } },
+      { type: 'text', text: prompt },
+    ];
+  }
 
   try {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
@@ -66,13 +77,7 @@ export default async function handler(req: Req, res: Res) {
       body: JSON.stringify({
         model: process.env.CLAUDE_MODEL || 'claude-haiku-5-5',
         max_tokens: 1200,
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'image', source: { type: 'base64', media_type: m[1], data: m[2] } },
-            { type: 'text', text: prompt },
-          ],
-        }],
+        messages: [{ role: 'user', content }],
       }),
     });
     if (!r.ok) {
